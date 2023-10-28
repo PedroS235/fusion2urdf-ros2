@@ -13,10 +13,12 @@ from distutils.dir_util import copy_tree
 import fileinput
 import sys
 
+
 def copy_occs(root):
     """
     duplicate all the components
     """
+
     def copy_body(allOccs, occs):
         """
         copy the old occs to new component
@@ -29,12 +31,12 @@ def copy_occs(root):
         # This support even when a component has some occses.
 
         new_occs = allOccs.addNewComponent(transform)  # this create new occs
-        if occs.component.name == 'base_link':
-            occs.component.name = 'old_component'
-            new_occs.component.name = 'base_link'
+        if occs.component.name == "base_link":
+            occs.component.name = "old_component"
+            new_occs.component.name = "base_link"
         else:
-            new_occs.component.name = re.sub('[ :()]', '_', occs.name)
-        new_occs = allOccs.item((allOccs.count-1))
+            new_occs.component.name = re.sub("[ :()]", "_", occs.name)
+        new_occs = allOccs.item((allOccs.count - 1))
         for i in range(bodies.count):
             body = bodies.item(i)
             body.copyToComponent(new_occs)
@@ -48,7 +50,7 @@ def copy_occs(root):
             oldOccs.append(occs)
 
     for occs in oldOccs:
-        occs.component.name = 'old_component'
+        occs.component.name = "old_component"
 
 
 def export_stl(design, save_dir, components):
@@ -67,26 +69,36 @@ def export_stl(design, save_dir, components):
     # create a single exportManager instance
     exportMgr = design.exportManager
     # get the script location
-    try: os.mkdir(save_dir + '/meshes')
-    except: pass
-    scriptDir = save_dir + '/meshes'
+    try:
+        os.mkdir(save_dir + "/meshes")
+    except:
+        pass
+    scriptDir = save_dir + "/meshes"
     # export the occurrence one by one in the component to a specified file
     for component in components:
         allOccus = component.allOccurrences
         for occ in allOccus:
-            if 'old_component' not in occ.component.name:
+            if "old_component" not in occ.component.name:
                 try:
                     print(occ.component.name)
                     fileName = scriptDir + "/" + occ.component.name
                     # create stl exportOptions
-                    stlExportOptions = exportMgr.createSTLExportOptions(occ, fileName)
+                    stlExportOptions = exportMgr.createSTLExportOptions(
+                        occ, fileName
+                    )
                     stlExportOptions.sendToPrintUtility = False
                     stlExportOptions.isBinaryFormat = True
                     # options are .MeshRefinementLow .MeshRefinementMedium .MeshRefinementHigh
-                    stlExportOptions.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementLow
+                    stlExportOptions.meshRefinement = (
+                        adsk.fusion.MeshRefinementSettings.MeshRefinementLow
+                    )
                     exportMgr.execute(stlExportOptions)
                 except:
-                    print('Component ' + occ.component.name + 'has something wrong.')
+                    print(
+                        "Component "
+                        + occ.component.name
+                        + "has something wrong."
+                    )
 
 
 def file_dialog(ui):
@@ -95,7 +107,7 @@ def file_dialog(ui):
     """
     # Set styles of folder dialog.
     folderDlg = ui.createFolderDialog()
-    folderDlg.title = 'Fusion Folder Dialog'
+    folderDlg.title = "Fusion Folder Dialog"
 
     # Show folder dialog
     dlgResult = folderDlg.showDialog()
@@ -123,9 +135,17 @@ def origin2center_of_mass(inertia, center_of_mass, mass):
     x = center_of_mass[0]
     y = center_of_mass[1]
     z = center_of_mass[2]
-    translation_matrix = [y**2+z**2, x**2+z**2, x**2+y**2,
-                         -x*y, -y*z, -x*z]
-    return [ round(i - mass*t, 6) for i, t in zip(inertia, translation_matrix)]
+    translation_matrix = [
+        y**2 + z**2,
+        x**2 + z**2,
+        x**2 + y**2,
+        -x * y,
+        -y * z,
+        -x * z,
+    ]
+    return [
+        round(i - mass * t, 6) for i, t in zip(inertia, translation_matrix)
+    ]
 
 
 def prettify(elem):
@@ -140,37 +160,51 @@ def prettify(elem):
     ----------
     pretified xml : str
     """
-    rough_string = ElementTree.tostring(elem, 'utf-8')
+    rough_string = ElementTree.tostring(elem, "utf-8")
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
+
 def create_package(package_name, save_dir, package_dir):
-    try: os.mkdir(save_dir + '/launch')
-    except: pass
-
-    try: os.mkdir(save_dir + '/urdf')
-    except: pass
-
-    try: os.mkdir(save_dir + '/config')
-    except: pass
-
-    try: os.mkdir(save_dir + '/' +package_name)
-    except: pass
-    with open(os.path.join(save_dir, package_name, '__init__.py'), 'w'):
+    try:
+        os.mkdir(save_dir + "/launch")
+    except:
         pass
 
-    try: os.mkdir(save_dir + '/resource')
-    except: pass
-    with open(os.path.join(save_dir, 'resource', package_name), 'w'):
+    try:
+        os.mkdir(save_dir + "/urdf")
+    except:
         pass
 
-    try: os.mkdir(save_dir + '/test')
-    except: pass
+    try:
+        os.mkdir(save_dir + "/config")
+    except:
+        pass
+
+    try:
+        os.mkdir(save_dir + "/" + package_name)
+    except:
+        pass
+    with open(os.path.join(save_dir, package_name, "__init__.py"), "w"):
+        pass
+
+    try:
+        os.mkdir(save_dir + "/resource")
+    except:
+        pass
+    with open(os.path.join(save_dir, "resource", package_name), "w"):
+        pass
+
+    try:
+        os.mkdir(save_dir + "/test")
+    except:
+        pass
 
     copy_tree(package_dir, save_dir)
 
+
 def update_setup_py(save_dir, package_name):
-    file_name = save_dir + '/setup.py'
+    file_name = save_dir + "/setup.py"
 
     for line in fileinput.input(file_name, inplace=True):
         if "package_name = 'fusion2urdf_ros2'" in line:
@@ -178,24 +212,30 @@ def update_setup_py(save_dir, package_name):
         else:
             sys.stdout.write(line)
 
+
 def update_setup_cfg(save_dir, package_name):
-    file_name = save_dir + '/setup.cfg'
+    file_name = save_dir + "/setup.cfg"
 
     for line in fileinput.input(file_name, inplace=True):
         if "script-dir" in line:
             sys.stdout.write("script-dir=$base/lib/" + package_name + "\n")
         elif "install-scripts" in line:
-            sys.stdout.write("install-scripts=$base/lib/" + package_name + "\n")
+            sys.stdout.write(
+                "install-scripts=$base/lib/" + package_name + "\n"
+            )
         else:
             sys.stdout.write(line)
 
+
 def update_package_xml(save_dir, package_name):
-    file_name = save_dir + '/package.xml'
+    file_name = save_dir + "/package.xml"
 
     for line in fileinput.input(file_name, inplace=True):
-        if '<name>' in line:
+        if "<name>" in line:
             sys.stdout.write("<name>" + package_name + "</name>\n")
-        elif '<description>' in line:
-            sys.stdout.write("<description>The " + package_name + " package</description>\n")
+        elif "<description>" in line:
+            sys.stdout.write(
+                "<description>The " + package_name + " package</description>\n"
+            )
         else:
             sys.stdout.write(line)
